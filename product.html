@@ -1,0 +1,76 @@
+<!-- product.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-5">
+    <a href="index.html" class="btn btn-sm btn-secondary mb-3">⬅ Back to Store</a>
+    <div id="product-details" class="row"></div>
+  </div>
+
+  <script src="products.js"></script>
+  <script>
+    const productDetailsEl = document.getElementById("product-details");
+
+    function getProductIdFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return parseInt(params.get("id"));
+    }
+
+    function renderProductDetails(productId) {
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        productDetailsEl.innerHTML = '<p class="text-danger">Product not found.</p>';
+        return;
+      }
+
+      productDetailsEl.innerHTML = `
+        <div class="col-md-6">
+          <img src="${product.image}" alt="${product.name}" class="img-fluid rounded shadow">
+        </div>
+        <div class="col-md-6">
+          <h2>${product.name}</h2>
+          <p class="text-muted">₹${product.price}</p>
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Product description goes here.</p>
+          <button class="btn btn-primary" onclick="addToCart(${product.id})">Add to Cart</button>
+        </div>
+      `;
+    }
+
+    function addToCart(id) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const existingItem = cart.find(item => item.id === id);
+
+      if (existingItem) {
+        existingItem.qty += 1;
+      } else {
+        cart.push({ id: id, qty: 1 });
+      }
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alert("✅ Added to cart!");
+    }
+
+    const productId = getProductIdFromURL();
+    renderProductDetails(productId);
+  </script>
+
+  <!-- Your other page scripts -->
+  <script src="products.js"></script>
+  <script src="product-details.js"></script>
+
+  <!-- ✅ Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="firebase.js"></script>
+
+  <!-- ✅ Bootstrap Bundle JS (if not already included) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

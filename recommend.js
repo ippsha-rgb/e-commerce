@@ -25,20 +25,27 @@ function getRecommendations(currentProductId, count = 3) {
   return shuffled.slice(0, count);
 }
 
-function showRecommendations(currentProductId) {
+function showRecommendationsFromCart() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  if (cart.length === 0) return;
+
+  const cartProductIds = cart.map(item => item.id);
+  const recommendations = recommendProducts.filter(p => !cartProductIds.includes(p.id));
+  const selected = recommendations.sort(() => 0.5 - Math.random()).slice(0, 3);
+
   const container = document.getElementById("recommendations");
-  container.innerHTML = "<h4>You may also like</h4>";
+  if (!container || selected.length === 0) return;
 
-  const recs = getRecommendations(currentProductId);
-  const row = document.createElement("div");
-  row.className = "row";
+  container.innerHTML = "<h4>You may also like</h4><div class='row'></div>";
+  const row = container.querySelector(".row");
 
-  recs.forEach(product => {
+  selected.forEach(product => {
     const card = document.createElement("div");
     card.className = "col-md-4 mb-3";
     card.innerHTML = `
       <div class="card product-card">
-        <img src="${product.image}" class="card-img-top product-image" alt="${product.name}" onclick="showImageSlideshow(${product.id})" style="cursor: pointer;">
+        <img src="${product.image}" class="card-img-top product-image" alt="${product.name}" style="height: 200px; object-fit: cover;">
         <div class="card-body">
           <h5 class="card-title">${product.name}</h5>
           <p class="card-text">₹${product.price}</p>
@@ -48,9 +55,8 @@ function showRecommendations(currentProductId) {
     `;
     row.appendChild(card);
   });
-
-  container.appendChild(row);
 }
+
 
 // Function to add to cart with visual feedback (no alerts)
 function addToCartFromRecommendations(id) {
@@ -64,6 +70,7 @@ function addToCartFromRecommendations(id) {
   }
 
   localStorage.setItem("cart", JSON.stringify(cart));
+  if (typeof saveCartToFirebase === 'function') saveCartToFirebase();
   
   // Visual feedback
   const button = event.target;
