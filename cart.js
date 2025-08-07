@@ -18,101 +18,169 @@ const cartProducts = typeof products !== 'undefined' ? products : [
   { id: 12, name: "Casual Shirt", price: 449, image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&h=500&fit=crop" }
 ];
 
+// Test function to verify cart functionality
+function testCart() {
+  console.log("Testing cart functionality...");
+  console.log("Cart container:", cartContainer);
+  console.log("Total price element:", totalPriceEl);
+  console.log("Products available:", cartProducts.length);
+  
+  // Test adding an item
+  let testCart = [{ id: 1, qty: 2 }, { id: 2, qty: 1 }];
+  localStorage.setItem("cart", JSON.stringify(testCart));
+  loadCart();
+}
+
+// Enhanced loadCart function with better error handling
 function loadCart() {
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  cartContainer.innerHTML = "";
-  let total = 0;
-
-  if (cart.length === 0) {
-    cartContainer.innerHTML = "<p>Your cart is empty.</p>";
-    totalPriceEl.textContent = "Total: ₹0";
-    return;
-  }
-
-  cart.forEach((item, index) => {
-    const product = cartProducts.find(p => p.id === item.id);
-    if (!product) return; // Skip if product not found
+  try {
+    console.log("Loading cart...");
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    console.log("Cart data:", cart);
     
-    const itemTotal = product.price * item.qty;
-    total += itemTotal;
+    if (!cartContainer) {
+      console.error("Cart container not found!");
+      return;
+    }
+    
+    cartContainer.innerHTML = "";
+    let total = 0;
 
-    const div = document.createElement("div");
-    div.className = "card p-3 mb-3 cart-item";
-    div.innerHTML = `
-      <div class="d-flex justify-content-between align-items-center">
-        <div style="display: flex; align-items: center; gap: 1em;">
-          <img src="${product.image}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
-          <div>
-            <h5>${product.name}</h5>
-            <p>₹${product.price} × ${item.qty} = ₹${itemTotal}</p>
+    if (cart.length === 0) {
+      cartContainer.innerHTML = `
+        <div class="text-center py-5">
+          <h4>🛒 Your cart is empty</h4>
+          <p class="text-muted">Add some products to get started!</p>
+          <a href="index.html" class="btn btn-primary">Continue Shopping</a>
+        </div>
+      `;
+      if (totalPriceEl) totalPriceEl.textContent = "Total: ₹0";
+      return;
+    }
+
+    cart.forEach((item, index) => {
+      const product = cartProducts.find(p => p.id === item.id);
+      if (!product) {
+        console.warn(`Product with id ${item.id} not found`);
+        return; // Skip if product not found
+      }
+      
+      const itemTotal = product.price * item.qty;
+      total += itemTotal;
+
+      const div = document.createElement("div");
+      div.className = "card p-3 mb-3 cart-item shadow-sm";
+      div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+          <div style="display: flex; align-items: center; gap: 1em;">
+            <img src="${product.image}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);">
+            <div>
+              <h5 class="mb-1">${product.name}</h5>
+              <p class="mb-0 text-muted">₹${product.price} × ${item.qty} = ₹${itemTotal}</p>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="changeQty(${index}, -1)" title="Decrease quantity">−</button>
+            <span class="badge bg-primary">${item.qty}</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="changeQty(${index}, 1)" title="Increase quantity">+</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="removeItem(${index})" title="Remove item">🗑️</button>
           </div>
         </div>
-        <div>
-          <button class="btn btn-sm btn-secondary" onclick="changeQty(${index}, -1)">−</button>
-          <button class="btn btn-sm btn-secondary" onclick="changeQty(${index}, 1)">+</button>
-          <button class="btn btn-sm btn-danger" onclick="removeItem(${index})">Remove</button>
-        </div>
-      </div>
-    `;
-    cartContainer.appendChild(div);
-  });
+      `;
+      cartContainer.appendChild(div);
+    });
 
-  totalPriceEl.textContent = `Total: ₹${total}`;
+    if (totalPriceEl) totalPriceEl.textContent = `Total: ₹${total}`;
+    console.log("Cart loaded successfully with", cart.length, "items");
+  } catch (error) {
+    console.error("Error loading cart:", error);
+  }
 }
 
 function changeQty(index, delta) {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
-  cart[index].qty += delta;
-  if (cart[index].qty <= 0) {
-    cart.splice(index, 1);
+  try {
+    console.log('Changing quantity:', index, delta);
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    cart[index].qty += delta;
+    if (cart[index].qty <= 0) {
+      cart.splice(index, 1);
+    }
+    localStorage.setItem("cart", JSON.stringify(cart));
+    loadCart();
+    
+    // Visual feedback
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = delta > 0 ? "✓" : "✓";
+    button.style.background = delta > 0 ? "#28a745" : "#dc3545";
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = "";
+    }, 500);
+    
+    console.log('Quantity updated successfully');
+  } catch (error) {
+    console.error('Error changing quantity:', error);
   }
-  localStorage.setItem("cart", JSON.stringify(cart));
-  loadCart();
-  
-  // Visual feedback
-  const button = event.target;
-  const originalText = button.textContent;
-  button.textContent = delta > 0 ? "✓" : "✓";
-  button.style.background = delta > 0 ? "#28a745" : "#dc3545";
-  
-  setTimeout(() => {
-    button.textContent = originalText;
-    button.style.background = "";
-  }, 500);
 }
 
 function removeItem(index) {
-  let cart = JSON.parse(localStorage.getItem("cart")) || [];
-  cart.splice(index, 1);
-  localStorage.setItem("cart", JSON.stringify(cart));
-  loadCart();
-  
-  // Visual feedback
-  const button = event.target;
-  const originalText = button.textContent;
-  button.textContent = "✓ Removed";
-  button.style.background = "#dc3545";
-  
-  setTimeout(() => {
-    button.textContent = originalText;
-    button.style.background = "";
-  }, 1000);
+  try {
+    console.log('Removing item:', index);
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    cart.splice(index, 1);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    loadCart();
+    
+    // Visual feedback
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = "✓ Removed";
+    button.style.background = "#dc3545";
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = "";
+    }, 1000);
+    
+    console.log('Item removed successfully');
+  } catch (error) {
+    console.error('Error removing item:', error);
+  }
 }
 
 function clearCart() {
-  localStorage.removeItem("cart");
-  loadCart();
-  
-  // Visual feedback
-  const button = event.target;
-  const originalText = button.textContent;
-  button.textContent = "✓ Cleared";
-  button.style.background = "#dc3545";
-  
-  setTimeout(() => {
-    button.textContent = originalText;
-    button.style.background = "";
-  }, 1000);
+  try {
+    console.log('Clearing cart');
+    localStorage.removeItem("cart");
+    loadCart();
+    
+    // Visual feedback
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = "✓ Cleared";
+    button.style.background = "#dc3545";
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = "";
+    }, 1000);
+    
+    console.log('Cart cleared successfully');
+  } catch (error) {
+    console.error('Error clearing cart:', error);
+  }
+}
+
+// ✅ Add this to update the cart badge
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+  const cartCountEl = document.getElementById("cart-count");
+  if (cartCountEl) {
+    cartCountEl.textContent = totalItems;
+  }
 }
 
 // Function to show recommendations based on cart items
@@ -122,6 +190,7 @@ function showRecommendationsFromCart() {
   
   // Get unique product IDs from cart
   const cartProductIds = [...new Set(cart.map(item => item.id))];
+
   
   // Get recommendations based on cart items
   const recommendations = cartProducts.filter(product => 
@@ -157,6 +226,6 @@ function showRecommendationsFromCart() {
 
 window.onload = () => {
   loadCart();
-  showRecommendationsFromCart();
+  updateCartCount();
+showRecommendationsFromCart();
 };
-
